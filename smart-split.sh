@@ -16,7 +16,8 @@ if [[ "$pane_cmd" == "ssh" || "$pane_cmd" == "mosh" || "$pane_cmd" == "mosh-clie
     ssh_cmd=$(ps -o args= -p "$pane_pid" 2>/dev/null)
 
     if [[ -n "$ssh_cmd" && ("$ssh_cmd" == ssh* || "$ssh_cmd" == mosh*) ]]; then
-        tmux split-window $direction "$ssh_cmd"
+        # Wrap in shell so exiting SSH doesn't close the pane
+        tmux split-window $direction "sh -c '$ssh_cmd; exec \$SHELL'"
         exit 0
     fi
 fi
@@ -26,7 +27,8 @@ child_pids=$(pgrep -P "$pane_pid" 2>/dev/null)
 for child_pid in $child_pids; do
     child_cmd=$(ps -o args= -p "$child_pid" 2>/dev/null)
     if [[ "$child_cmd" == ssh* || "$child_cmd" == mosh* ]]; then
-        tmux split-window $direction "$child_cmd"
+        # Wrap in shell so exiting SSH doesn't close the pane
+        tmux split-window $direction "sh -c '$child_cmd; exec \$SHELL'"
         exit 0
     fi
 done
